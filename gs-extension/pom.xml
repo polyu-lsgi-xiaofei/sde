@@ -9,5 +9,6 @@
   <packaging>pom</packaging>
   <modules>
   	<module>gs-extension-cassandra</module>
+  	<module>gs-extension-csv</module>
   </modules>
 </project>
