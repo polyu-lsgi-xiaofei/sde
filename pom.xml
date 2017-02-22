@@ -11,6 +11,7 @@
 		<module>gs-core</module>
 		<module>gs-extension</module>
 		<module>gs-s2</module>
+		<module>gs-example</module>
 	</modules>
 
 	<repositories>
@@ -63,7 +64,21 @@
 				<artifactId>gs-s2</artifactId>
 				<version>${geosde.version}</version>
 			</dependency>
-
+			<dependency>
+				<groupId>org.geosde</groupId>
+				<artifactId>gs-extension-cassandra</artifactId>
+				<version>${geosde.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.geosde</groupId>
+				<artifactId>gs-extension-shapefile</artifactId>
+				<version>${geosde.version}</version>
+			</dependency>
+				<dependency>
+				<groupId>org.geosde</groupId>
+				<artifactId>gs-extension-csv</artifactId>
+				<version>${geosde.version}</version>
+			</dependency>
 			<!-- Geotools -->
 			<dependency>
 				<groupId>org.geotools</groupId>
@@ -73,16 +88,6 @@
 			<dependency>
 				<groupId>org.geotools</groupId>
 				<artifactId>gt-main</artifactId>
-				<version>${gt.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.geotools</groupId>
-				<artifactId>gt-data</artifactId>
-				<version>${gt.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.geotools</groupId>
-				<artifactId>gt-shapefile</artifactId>
 				<version>${gt.version}</version>
 			</dependency>
 			<dependency>

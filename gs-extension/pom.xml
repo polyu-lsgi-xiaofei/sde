@@ -10,5 +10,6 @@
   <modules>
   	<module>gs-extension-cassandra</module>
   	<module>gs-extension-csv</module>
+  	<module>gs-extension-shapefile</module>
   </modules>
 </project>
