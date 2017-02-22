@@ -12,6 +12,10 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.geosde</groupId>
+			<artifactId>gs-s2</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>com.datastax.cassandra</groupId>
 			<artifactId>cassandra-driver-core</artifactId>
 		</dependency>

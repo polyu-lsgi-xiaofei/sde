@@ -6,9 +6,9 @@ import org.geotools.data.FeatureWriter;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
-public class CassandraFeatureWriter implements FeatureWriter<SimpleFeatureType, SimpleFeature>{
+public class CassandraInsertFeatureWriter implements FeatureWriter<SimpleFeatureType, SimpleFeature>{
 	
-	public CassandraFeatureWriter() {
+	public CassandraInsertFeatureWriter() {
 		// TODO Auto-generated constructor stub
 	}
 	

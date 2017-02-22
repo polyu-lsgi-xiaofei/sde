@@ -13,6 +13,7 @@ import org.geotools.feature.AttributeTypeBuilder;
 import org.geotools.feature.NameImpl;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
 import org.geotools.referencing.CRS;
+import org.geotools.referencing.crs.DefaultGeographicCRS;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.AttributeDescriptor;
 import org.opengis.feature.type.Name;
@@ -68,7 +69,7 @@ public class CassandraDataStore extends ContentDataStore {
 		Session session = connector.getSession();
 		List<Name> typeNames = new ArrayList<>();
 		String namespace = getNamespaceURI();
-		SimpleStatement statement = new SimpleStatement("SELECT workspace_name,layer_name FROM catalog.layers");
+		SimpleStatement statement = new SimpleStatement("SELECT catalog_name,workspace_name,layer_name,cdate FROM catalog.layers;");
 		ResultSet rs = session.execute(statement);
 
 		for (Row row : rs) {
@@ -81,13 +82,12 @@ public class CassandraDataStore extends ContentDataStore {
 		return typeNames;
 	}
 
-	@Override
-	public void createSchema(SimpleFeatureType featureType) throws IOException {
+	public void createSchema(SimpleFeatureType featureType, Date date) throws IOException {
 		Session session = connector.getSession();
 		String catalog_name = "usa";
 		String workspace_name = getNamespaceURI();
 		String layer_name = featureType.getTypeName();
-		Date cdate = new Date();
+		Date cdate = date;
 		String owner = "xiaofei";
 		String geometry_type = featureType.getGeometryDescriptor().getType().getName().getLocalPart();
 		String geometry_column = "the_geom";
@@ -127,21 +127,27 @@ public class CassandraDataStore extends ContentDataStore {
 	}
 
 	@Override
+	public void createSchema(SimpleFeatureType featureType) throws IOException {
+		createSchema(featureType, new Date());
+	}
+
+	@Override
 	public SimpleFeatureType getSchema(Name name) throws IOException {
 		String catalog_name = getCatalog_name();
 		String workspace_name = getNamespaceURI();
-		KeyspaceMetadata keyspaceMetadata = connector.getCluster().getMetadata().getKeyspace(getNamespaceURI());
-		TableMetadata table = keyspaceMetadata.getTable(name.toString());
-		return getSchema(catalog_name,workspace_name,name, table);
+		KeyspaceMetadata keyspaceMetadata = connector.getCluster().getMetadata().getKeyspace(workspace_name);
+		TableMetadata table = keyspaceMetadata.getTable(name.getLocalPart().replace(".", "_"));
+		return getSchema(catalog_name, workspace_name, name, table);
 	}
 
-	public SimpleFeatureType getSchema(String catalog_name,String workspace_name,Name name, TableMetadata table) {
+	public SimpleFeatureType getSchema(String catalog_name, String workspace_name, Name name, TableMetadata table) {
 		Session session = connector.getSession();
 		SimpleStatement statement = new SimpleStatement(
-				"SELECT * FROM catalog.layers where catalog_name=? and workspace_name=? and layer_name=?;",catalog_name,workspace_name,name.getLocalPart());
-		ResultSet rs=session.execute(statement);
-		Row row=rs.one();
-		int srid=row.getInt("srid");
+				"SELECT * FROM catalog.layers where catalog_name=? and workspace_name=? and layer_name=?;",
+				catalog_name, workspace_name, name.getLocalPart());
+		ResultSet rs = session.execute(statement);
+		Row row = rs.one();
+		int srid = row.getInt("srid");
 		List<ColumnMetadata> columns = table.getColumns();
 		SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
 		builder.setName(name);
@@ -155,7 +161,7 @@ public class CassandraDataStore extends ContentDataStore {
 					attrTypeBuilder.binding(binding);
 					CoordinateReferenceSystem wsg84 = null;
 					try {
-						wsg84 = CRS.decode("EPSG:"+srid);
+						wsg84 = DefaultGeographicCRS.WGS84;
 					} catch (Exception e) {
 						e.printStackTrace();
 					}

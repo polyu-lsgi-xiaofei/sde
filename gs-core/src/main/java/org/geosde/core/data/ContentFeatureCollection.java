@@ -135,6 +135,7 @@ public class ContentFeatureCollection implements SimpleFeatureCollection {
         FeatureReader<SimpleFeatureType, SimpleFeature> delegate;
         
         public WrappingFeatureIterator(  FeatureReader<SimpleFeatureType, SimpleFeature> delegate ) {
+        	System.out.println(delegate);
             this.delegate = delegate;
         }
         

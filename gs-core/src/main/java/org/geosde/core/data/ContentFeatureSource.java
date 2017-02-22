@@ -671,7 +671,7 @@ public abstract class ContentFeatureSource implements SimpleFeatureSource {
         }
 
         // retyping
-        if (!canRetype() || postRetypeRequired) {
+        if (false) {
             if ( query.getPropertyNames() != Query.ALL_NAMES ) {
                 //rebuild the type and wrap the reader
                 SimpleFeatureType target = 

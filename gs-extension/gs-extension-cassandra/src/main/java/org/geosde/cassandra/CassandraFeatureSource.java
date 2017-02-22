@@ -2,21 +2,22 @@ package org.geosde.cassandra;
 
 import java.io.IOException;
 
-import org.geosde.core.data.ContentDataStore;
 import org.geosde.core.data.ContentEntry;
 import org.geosde.core.data.ContentFeatureSource;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.Query;
+import org.geotools.filter.visitor.ExtractBoundsFilterVisitor;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
 import com.datastax.driver.core.Session;
+import com.vividsolutions.jts.geom.Envelope;
 
 public class CassandraFeatureSource extends ContentFeatureSource {
 
-	
 	Session session;
+
 	/**
 	 * Creates the new feature store.
 	 * 
@@ -57,13 +58,13 @@ public class CassandraFeatureSource extends ContentFeatureSource {
 
 	@Override
 	protected FeatureReader<SimpleFeatureType, SimpleFeature> getReaderInternal(Query query) throws IOException {
-
-		return new CassandraFeatureReader(query);
+		CassandraFeatureReader reader = new CassandraFeatureReader(session,getSchema(),query);
+		return reader;
 	}
-	
-    @Override
-    public CassandraDataStore getDataStore() {
-        return (CassandraDataStore) super.getDataStore();
-    }
+
+	@Override
+	public CassandraDataStore getDataStore() {
+		return (CassandraDataStore) super.getDataStore();
+	}
 
 }
