@@ -1,7 +1,9 @@
 package org.geosde.example;
 
+import java.io.File;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,6 +11,9 @@ import java.util.concurrent.Callable;
 
 import org.geosde.cassandra.CassandraDataStore;
 import org.geosde.cassandra.CassandraFeatureSource;
+import org.geosde.cassandra.CassandraFeatureStore;
+import org.geosde.shapefile.ShapefileDataStore;
+import org.geosde.shapefile.ShapefileDataStoreFactory;
 import org.geotools.data.DataStore;
 import org.geotools.data.DataStoreFinder;
 import org.geotools.data.Query;
@@ -18,6 +23,7 @@ import org.geotools.data.simple.SimpleFeatureSource;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
 import org.geotools.filter.text.cql2.CQL;
 import org.opengis.feature.simple.SimpleFeature;
+import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
 
 import com.datastax.driver.core.ResultSet;
@@ -174,9 +180,30 @@ public class CassandraTest {
 		}
 	}
 
+	
+	public void testWriter() throws Exception {
+		
+	
+		ShapefileDataStoreFactory datasoreFactory = new ShapefileDataStoreFactory();
+		ShapefileDataStore sds = (ShapefileDataStore) datasoreFactory.createDataStore(
+				new File("E:\\Data\\OSM\\USA\\california\\california-170101-free.shp\\gis.osm_landuse_a_free_1.shp")
+						.toURI().toURL());
+		sds.setCharset(Charset.forName("GBK"));
+		SimpleFeatureSource featureSource = sds.getFeatureSource();
+		SimpleFeatureType featureType = featureSource.getFeatures().getSchema();
+		//datastore.createSchema(featureType);
+		SimpleFeatureCollection featureCollection = featureSource.getFeatures();
+		
+		CassandraDataStore datastore = new CassandraDataStore();
+		datastore.setCatalog_name("usa");
+		datastore.setNamespaceURI("usa");
+		CassandraFeatureStore cfeatureSource = (CassandraFeatureStore) datastore.getFeatureSource("gis.osm_pois_free_1");
+		System.out.println(cfeatureSource);
+		cfeatureSource.addFeatures(featureCollection);
+	}
 	public static void main(String[] args) throws Exception {
 		// System.out.println("558".compareTo("546"));
-		new CassandraTest().testReader();
+		new CassandraTest().testWriter();
 	}
 
 }

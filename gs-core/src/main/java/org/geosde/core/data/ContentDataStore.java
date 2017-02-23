@@ -389,7 +389,6 @@ public abstract class ContentDataStore implements DataStore {
 	public ContentFeatureSource getFeatureSource(Name typeName, Transaction tx) throws IOException {
 
 		ContentEntry entry = ensureEntry(typeName);
-
 		ContentFeatureSource featureSource = createFeatureSource(entry);
 		featureSource.setTransaction(tx);
 

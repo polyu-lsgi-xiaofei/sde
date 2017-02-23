@@ -35,7 +35,7 @@ public class CassandraFeatureStore extends ContentFeatureStore {
 	protected FeatureWriter<SimpleFeatureType, SimpleFeature> getWriterInternal(Query query, int flags)
 			throws IOException {
 		// TODO Auto-generated method stub
-		return null;
+		return new CassandraInsertFeatureWriter(delegate.getSchema());
 	}
 
 	// ----------------------------------------------------------------------------------------

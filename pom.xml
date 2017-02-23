@@ -12,6 +12,7 @@
 		<module>gs-extension</module>
 		<module>gs-s2</module>
 		<module>gs-example</module>
+		<module>gs-compute</module>
 	</modules>
 
 	<repositories>
@@ -165,6 +166,11 @@
 				<groupId>org.postgresql</groupId>
 				<artifactId>postgresql</artifactId>
 				<version>${postgresql.jdbc.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>mysql</groupId>
+				<artifactId>mysql-connector-java</artifactId>
+				<version>5.1.17</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

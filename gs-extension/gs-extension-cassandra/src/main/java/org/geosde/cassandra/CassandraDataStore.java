@@ -9,6 +9,7 @@ import org.geosde.core.data.ContentDataStore;
 import org.geosde.core.data.ContentEntry;
 import org.geosde.core.data.ContentFeatureSource;
 import org.geotools.data.Query;
+import org.geotools.data.Transaction;
 import org.geotools.feature.AttributeTypeBuilder;
 import org.geotools.feature.NameImpl;
 import org.geotools.feature.simple.SimpleFeatureTypeBuilder;
@@ -61,7 +62,19 @@ public class CassandraDataStore extends ContentDataStore {
 	//
 	@Override
 	protected ContentFeatureSource createFeatureSource(ContentEntry entry) throws IOException {
-		return new CassandraFeatureSource(connector.getSession(), entry, Query.ALL);
+		System.out.println(entry.getState(Transaction.AUTO_COMMIT));
+		SimpleFeatureType schema = entry.getState(Transaction.AUTO_COMMIT).getFeatureType();
+		if (schema == null) {
+			// if the schema still haven't been computed, force its computation
+			// so
+			// that we can decide if the feature type is read only
+			schema = new CassandraFeatureSource(connector.getSession(), entry, Query.ALL).buildFeatureType();
+			entry.getState(Transaction.AUTO_COMMIT).setFeatureType(schema);
+		}
+		schema = entry.getState(Transaction.AUTO_COMMIT).getFeatureType();
+		System.out.println(schema);
+		//return new CassandraFeatureSource(connector.getSession(), entry, Query.ALL);
+		return new CassandraFeatureStore(entry, connector.getSession());
 	}
 
 	@Override
@@ -78,6 +91,7 @@ public class CassandraDataStore extends ContentDataStore {
 			if (namespace.equals(workspace_name))
 				typeNames.add(new NameImpl(workspace_name, layer_name));
 		}
+		System.out.println(typeNames);
 		session.close();
 		return typeNames;
 	}
