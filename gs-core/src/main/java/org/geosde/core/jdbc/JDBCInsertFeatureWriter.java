@@ -33,125 +33,125 @@ import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
 /**
- * Inserts features in the database. Buffers the insertions until BUFFER_SIZE is reached or
- * the writer is closed.
+ * Inserts features in the database. Buffers the insertions until BUFFER_SIZE is
+ * reached or the writer is closed.
  *
  * @source $URL$
  */
-public class JDBCInsertFeatureWriter extends JDBCFeatureReader implements FeatureWriter<SimpleFeatureType, SimpleFeature> {
-    /**
-     * Grouping elements together in order to have a decent batch size.
-     */
-    private final ResultSetFeature[] buffer;
-    private int curBufferPos = 0;
-    
-    public JDBCInsertFeatureWriter(String sql, Connection cx,
-            JDBCFeatureSource featureSource, Hints hints) throws SQLException, IOException {
-        super(sql, cx, featureSource, featureSource.getSchema(), hints);
-        buffer = new ResultSetFeature[dataStore.getBatchInsertSize()];
-    }
+public class JDBCInsertFeatureWriter extends JDBCFeatureReader
+		implements FeatureWriter<SimpleFeatureType, SimpleFeature> {
+	/**
+	 * Grouping elements together in order to have a decent batch size.
+	 */
+	private final ResultSetFeature[] buffer;
+	private int curBufferPos = 0;
 
-    public JDBCInsertFeatureWriter(PreparedStatement ps, Connection cx, JDBCFeatureSource featureSource, Hints hints)
-        throws SQLException, IOException {
-        super( ps, cx, featureSource, featureSource.getSchema(), hints );
-        buffer = new ResultSetFeature[dataStore.getBatchInsertSize()];
-    }
-    
-    public JDBCInsertFeatureWriter(JDBCUpdateFeatureWriter other) throws IOException {
-        super(other);
-        buffer = new ResultSetFeature[dataStore.getBatchInsertSize()];
-    }
+	public JDBCInsertFeatureWriter(String sql, Connection cx, JDBCFeatureSource featureSource, Hints hints)
+			throws SQLException, IOException {
+		super(sql, cx, featureSource, featureSource.getSchema(), hints);
+		buffer = new ResultSetFeature[dataStore.getBatchInsertSize()];
+	}
 
-    private ResultSetFeature getOrCreateRSF() throws IOException {
-        ResultSetFeature result = buffer[curBufferPos];
-        if (result == null) {
-            try {
-                result = new ResultSetFeature(rs, cx);
-                buffer[curBufferPos] = result;
-            } catch (SQLException e) {
-                throw new IOException(e);
-            }
-        }
-        return result;
-    }
+	public JDBCInsertFeatureWriter(PreparedStatement ps, Connection cx, JDBCFeatureSource featureSource, Hints hints)
+			throws SQLException, IOException {
+		super(ps, cx, featureSource, featureSource.getSchema(), hints);
+		buffer = new ResultSetFeature[dataStore.getBatchInsertSize()];
+	}
 
-    public boolean hasNext() throws IOException {
-        return false;
-    }
+	public JDBCInsertFeatureWriter(JDBCUpdateFeatureWriter other) throws IOException {
+		super(other);
+		buffer = new ResultSetFeature[dataStore.getBatchInsertSize()];
+	}
 
-    public SimpleFeature next() throws IOException {
-        //init, setting id to null explicity since the feature is yet to be 
-        // inserted
-        ResultSetFeature rsf = getOrCreateRSF();
-        rsf.init(null);
-        return rsf;
-    }
+	private ResultSetFeature getOrCreateRSF() throws IOException {
+		ResultSetFeature result = buffer[curBufferPos];
+		if (result == null) {
+			try {
+				result = new ResultSetFeature(rs, cx);
+				buffer[curBufferPos] = result;
+			} catch (SQLException e) {
+				throw new IOException(e);
+			}
+		}
+		return result;
+	}
 
-    public void remove() throws IOException {
-        //noop
-    }
+	public boolean hasNext() throws IOException {
+		return false;
+	}
 
-    public void write() throws IOException {
-        if (++curBufferPos >= buffer.length) {
-            //buffer full => do the inserts
-            flush();
-        }
-    }
+	public SimpleFeature next() throws IOException {
+		// init, setting id to null explicity since the feature is yet to be
+		// inserted
+		ResultSetFeature rsf = getOrCreateRSF();
+		rsf.init(null);
+		return rsf;
+	}
 
-    @Override
-    protected void cleanup() throws IOException {
-        try {
-            flush();
-        } finally {
-            for (int i = 0; i < buffer.length; i++) {
-                if (buffer[i] == null) {
-                    break;
-                }
-                buffer[i].close();
-                buffer[i] = null;
-            }
-            super.cleanup();
-        }
-    }
+	public void remove() throws IOException {
+		// noop
+	}
 
-    private void flush() throws IOException {
-        if(curBufferPos == 0) {
-            return;
-        }
-        try {
-            //do the insert
-            Collection<ResultSetFeature> features =
-                    Arrays.asList(Arrays.copyOfRange(buffer, 0, curBufferPos));
-            dataStore.insert(features, featureType, st.getConnection());
+	public void write() throws IOException {
+		if (++curBufferPos >= buffer.length) {
+			// buffer full => do the inserts
+			flush();
+		}
+	}
 
-            for (ResultSetFeature cur : features) {
-                //the datastore sets as userData, grab it and update the fid
-                final String fid = (String) cur.getUserData().get("fid");
-                cur.setID(fid);
-                final SimpleFeature orig =(SimpleFeature)cur.getUserData().
-                        get(ContentFeatureStore.ORIGINAL_FEATURE_KEY);
-                if (orig != null) {
-                    ((FeatureIdImpl)orig.getIdentifier()).setID(fid);
-                    orig.getUserData().putAll(cur.getUserData());
-                    orig.getUserData().remove(ContentFeatureStore.ORIGINAL_FEATURE_KEY);
-                }
+	@Override
+	protected void cleanup() throws IOException {
+		try {
+			flush();
+		} finally {
+			for (int i = 0; i < buffer.length; i++) {
+				if (buffer[i] == null) {
+					break;
+				}
+				buffer[i].close();
+				buffer[i] = null;
+			}
+			super.cleanup();
+		}
+	}
 
-                final ContentEntry entry = featureSource.getEntry();
-                final ContentState state = entry.getState(this.tx);
-                state.fireFeatureAdded(featureSource, cur);
-            }
-        } catch (SQLException e) {
-            throw new IOException(e);
-        } finally {
-            curBufferPos = 0;
-        }
-    }
+	private void flush() throws IOException {
+		if (curBufferPos == 0) {
+			return;
+		}
+		try {
+			// do the insert
+			Collection<ResultSetFeature> features = Arrays.asList(Arrays.copyOfRange(buffer, 0, curBufferPos));
+			dataStore.insert(features, featureType, st.getConnection());
 
-    public void close() throws IOException {
-        try {
-            flush();
-        } finally {
-            super.close();
-        }
-    }
+			for (ResultSetFeature cur : features) {
+				// the datastore sets as userData, grab it and update the fid
+				final String fid = (String) cur.getUserData().get("fid");
+				cur.setID(fid);
+				final SimpleFeature orig = (SimpleFeature) cur.getUserData()
+						.get(ContentFeatureStore.ORIGINAL_FEATURE_KEY);
+				if (orig != null) {
+					((FeatureIdImpl) orig.getIdentifier()).setID(fid);
+					orig.getUserData().putAll(cur.getUserData());
+					orig.getUserData().remove(ContentFeatureStore.ORIGINAL_FEATURE_KEY);
+				}
+
+				final ContentEntry entry = featureSource.getEntry();
+				final ContentState state = entry.getState(this.tx);
+				state.fireFeatureAdded(featureSource, cur);
+			}
+		} catch (SQLException e) {
+			throw new IOException(e);
+		} finally {
+			curBufferPos = 0;
+		}
+	}
+
+	public void close() throws IOException {
+		try {
+			flush();
+		} finally {
+			super.close();
+		}
+	}
 }

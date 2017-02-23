@@ -2,25 +2,32 @@ package org.geosde.cassandra;
 
 import java.io.IOException;
 
+import org.geosde.core.jdbc.JDBCFeatureReader;
 import org.geotools.data.FeatureWriter;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 
+import com.datastax.driver.core.BatchStatement;
+
 public class CassandraInsertFeatureWriter implements FeatureWriter<SimpleFeatureType, SimpleFeature>{
 	
-	public CassandraInsertFeatureWriter() {
-		// TODO Auto-generated constructor stub
+	private final static int BATCH_SIZE=20;
+	private SimpleFeature currentFeature;
+	private BatchStatement bs;
+	private int curBufferPos = 0;
+	private SimpleFeatureType sft;
+	
+	public CassandraInsertFeatureWriter(SimpleFeatureType sft) {
+		this.sft=sft;
+		bs=new BatchStatement();
 	}
 	
 	@Override
 	public SimpleFeatureType getFeatureType() {
-		// TODO Auto-generated method stub
-		return null;
+		return sft;
 	}
-	
 	@Override
 	public boolean hasNext() throws IOException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	
@@ -38,7 +45,6 @@ public class CassandraInsertFeatureWriter implements FeatureWriter<SimpleFeature
 	
 	@Override
 	public void write() throws IOException {
-		// TODO Auto-generated method stub
 		
 	}
 	

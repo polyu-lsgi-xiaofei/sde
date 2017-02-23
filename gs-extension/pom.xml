@@ -12,5 +12,6 @@
   	<module>gs-extension-csv</module>
   	<module>gs-extension-shapefile</module>
   	<module>gs-extension-postgis</module>
+  	<module>gs-extension-oracle</module>
   </modules>
 </project>

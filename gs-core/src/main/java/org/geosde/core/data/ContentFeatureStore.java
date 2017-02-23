@@ -153,7 +153,6 @@ public abstract class ContentFeatureStore extends ContentFeatureSource
 		query = resolvePropertyNames(query);
 
 		FeatureWriter<SimpleFeatureType, SimpleFeature> writer;
-
 		if (!canTransact() && transaction != null && transaction != Transaction.AUTO_COMMIT) {
 			if ((flags | WRITER_COMMIT) == WRITER_COMMIT) {
 				// Simple simple writer with no events or locking
@@ -263,6 +262,7 @@ public abstract class ContentFeatureStore extends ContentFeatureSource
 		List<FeatureId> ids = new ArrayList<FeatureId>();
 
 		FeatureWriter<SimpleFeatureType, SimpleFeature> writer = getWriterAppend();
+		System.out.println(writer);
 		FeatureIterator<SimpleFeature> f = featureCollection.features();
 		try {
 			while (f.hasNext()) {

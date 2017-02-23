@@ -79,6 +79,11 @@
 				<artifactId>gs-extension-csv</artifactId>
 				<version>${geosde.version}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.geosde</groupId>
+				<artifactId>gs-extension-postgis</artifactId>
+				<version>${geosde.version}</version>
+			</dependency>
 			<!-- Geotools -->
 			<dependency>
 				<groupId>org.geotools</groupId>
@@ -154,6 +159,8 @@
 				<artifactId>commons-dbcp</artifactId>
 				<version>1.4</version>
 			</dependency>
+
+			<!-- JDBC -->
 			<dependency>
 				<groupId>org.postgresql</groupId>
 				<artifactId>postgresql</artifactId>

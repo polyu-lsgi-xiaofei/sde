@@ -2121,13 +2121,13 @@ public final class JDBCDataStore extends ContentDataStore
         // just one, no need to build support structures
         if(pkey.getColumns().size() == 1)
             return rs.getString(offset+1);
-
         // more than one
         List<Object> keyValues = new ArrayList<Object>();
         for(int i = 0; i < pkey.getColumns().size(); i++) {
             String o = rs.getString(offset+i+1);
             keyValues.add( o );
         }
+        
         return encodeFID( keyValues );
     }
 

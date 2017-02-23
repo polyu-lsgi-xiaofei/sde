@@ -277,7 +277,6 @@ public final class JDBCFeatureStore extends ContentFeatureStore {
                     // the query to return any data ==> Filter.EXCLUDE
                     String sql = getDataStore().selectSQL(getSchema(), queryNone);
                     getDataStore().getLogger().fine(sql);
-    
                     return new JDBCInsertFeatureWriter( sql, cx, delegate, query.getHints() );
                 }
             }
@@ -324,6 +323,8 @@ public final class JDBCFeatureStore extends ContentFeatureStore {
         if ( postFilter != null && postFilter != Filter.INCLUDE ) {
             writer = new FilteringFeatureWriter( writer, postFilter );
         }
+        
+        
         return writer;
     }
     
