@@ -11,5 +11,6 @@
   	<module>gs-extension-cassandra</module>
   	<module>gs-extension-csv</module>
   	<module>gs-extension-shapefile</module>
+  	<module>gs-extension-postgis</module>
   </modules>
 </project>
