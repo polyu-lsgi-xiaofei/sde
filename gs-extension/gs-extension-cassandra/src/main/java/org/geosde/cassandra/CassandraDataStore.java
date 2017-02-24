@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.geosde.core.TransactionMode;
 import org.geosde.core.data.ContentDataStore;
 import org.geosde.core.data.ContentEntry;
 import org.geosde.core.data.ContentFeatureSource;
@@ -31,24 +32,20 @@ import com.vividsolutions.jts.geom.Geometry;
 
 public class CassandraDataStore extends ContentDataStore {
 
-	private CassandraConnector connector;
-
 	private String catalog_name;
-
-	/**
-	 * The native SRID associated to a certain descriptor TODO: qualify this key
-	 * with 'org.geotools.jdbc'
-	 */
-	public static final String CASSANDRA_NATIVE_SRID = "nativeSRID";
+	private TransactionMode mode;
 
 	public CassandraDataStore() {
-		connector = new CassandraConnector();
+		this(TransactionMode.READ);
+	}
+
+	public CassandraDataStore(TransactionMode mode) {
+		this.mode = mode;
 	}
 
 	//
 	// Property accessors
 	//
-
 	public String getCatalog_name() {
 		return catalog_name;
 	}
@@ -62,27 +59,30 @@ public class CassandraDataStore extends ContentDataStore {
 	//
 	@Override
 	protected ContentFeatureSource createFeatureSource(ContentEntry entry) throws IOException {
-		System.out.println(entry.getState(Transaction.AUTO_COMMIT));
 		SimpleFeatureType schema = entry.getState(Transaction.AUTO_COMMIT).getFeatureType();
 		if (schema == null) {
 			// if the schema still haven't been computed, force its computation
-			// so
-			// that we can decide if the feature type is read only
-			schema = new CassandraFeatureSource(connector.getSession(), entry, Query.ALL).buildFeatureType();
+			// so that we can decide if the feature type is read only
+			schema = getSchema(entry.getName());
+			System.out.println(schema);
 			entry.getState(Transaction.AUTO_COMMIT).setFeatureType(schema);
 		}
 		schema = entry.getState(Transaction.AUTO_COMMIT).getFeatureType();
-		System.out.println(schema);
-		//return new CassandraFeatureSource(connector.getSession(), entry, Query.ALL);
-		return new CassandraFeatureStore(entry, connector.getSession());
+		if (mode == TransactionMode.READ) {
+			return new CassandraFeatureSource(entry, Query.ALL);
+		} else {
+			return new CassandraFeatureStore(entry);
+		}
+
 	}
 
 	@Override
 	protected List<Name> createTypeNames() throws IOException {
-		Session session = connector.getSession();
+		Session session = CassandraConnector.getSession();
 		List<Name> typeNames = new ArrayList<>();
 		String namespace = getNamespaceURI();
-		SimpleStatement statement = new SimpleStatement("SELECT catalog_name,workspace_name,layer_name,cdate FROM catalog.layers;");
+		SimpleStatement statement = new SimpleStatement(
+				"SELECT catalog_name,workspace_name,layer_name,cdate FROM catalog.layers;");
 		ResultSet rs = session.execute(statement);
 
 		for (Row row : rs) {
@@ -91,13 +91,12 @@ public class CassandraDataStore extends ContentDataStore {
 			if (namespace.equals(workspace_name))
 				typeNames.add(new NameImpl(workspace_name, layer_name));
 		}
-		System.out.println(typeNames);
 		session.close();
 		return typeNames;
 	}
 
 	public void createSchema(SimpleFeatureType featureType, Date date) throws IOException {
-		Session session = connector.getSession();
+		Session session = CassandraConnector.getSession();
 		String catalog_name = "usa";
 		String workspace_name = getNamespaceURI();
 		String layer_name = featureType.getTypeName();
@@ -115,8 +114,8 @@ public class CassandraDataStore extends ContentDataStore {
 		SimpleStatement statement = new SimpleStatement(
 				"INSERT INTO catalog.layers (catalog_name,workspace_name,layer_name,cdate,owner,geometry_type,geometry_column,srid,minx,miny,maxx,maxy,keywords) "
 						+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);",
-				catalog_name, workspace_name, layer_name, cdate.getTime(), owner, geometry_type, geometry_column, srid,
-				minx, miny, maxx, maxy, keywords);
+				catalog_name, workspace_name, layer_name.toString().replace(".", "_"), cdate.getTime(), owner,
+				geometry_type, geometry_column, srid, minx, miny, maxx, maxy, keywords);
 		session.execute(statement);
 
 		StringBuilder builder = new StringBuilder();
@@ -149,13 +148,13 @@ public class CassandraDataStore extends ContentDataStore {
 	public SimpleFeatureType getSchema(Name name) throws IOException {
 		String catalog_name = getCatalog_name();
 		String workspace_name = getNamespaceURI();
-		KeyspaceMetadata keyspaceMetadata = connector.getCluster().getMetadata().getKeyspace(workspace_name);
+		KeyspaceMetadata keyspaceMetadata = CassandraConnector.getCluster().getMetadata().getKeyspace(workspace_name);
 		TableMetadata table = keyspaceMetadata.getTable(name.getLocalPart().replace(".", "_"));
 		return getSchema(catalog_name, workspace_name, name, table);
 	}
 
 	public SimpleFeatureType getSchema(String catalog_name, String workspace_name, Name name, TableMetadata table) {
-		Session session = connector.getSession();
+		Session session = CassandraConnector.getSession();
 		SimpleStatement statement = new SimpleStatement(
 				"SELECT * FROM catalog.layers where catalog_name=? and workspace_name=? and layer_name=?;",
 				catalog_name, workspace_name, name.getLocalPart());
@@ -213,46 +212,4 @@ public class CassandraDataStore extends ContentDataStore {
 		return srid;
 	}
 
-	protected int getGeometrySRID(Geometry g, AttributeDescriptor descriptor) throws IOException {
-		int srid = getDescriptorSRID(descriptor);
-
-		if (g == null) {
-			return srid;
-		}
-
-		// check for srid in the jts geometry then
-		if (srid <= 0 && g.getSRID() > 0) {
-			srid = g.getSRID();
-		}
-
-		// check if the geometry has anything
-		if (srid <= 0 && g.getUserData() instanceof CoordinateReferenceSystem) {
-			// check for crs object
-			CoordinateReferenceSystem crs = (CoordinateReferenceSystem) g.getUserData();
-			try {
-				Integer candidate = CRS.lookupEpsgCode(crs, false);
-				if (candidate != null)
-					srid = candidate;
-			} catch (Exception e) {
-				// ok, we tried...
-			}
-		}
-
-		return srid;
-	}
-
-	/**
-	 * Extracts the eventual native SRID user property from the descriptor,
-	 * returns -1 if not found
-	 * 
-	 * @param descriptor
-	 */
-	protected int getDescriptorSRID(AttributeDescriptor descriptor) {
-		int srid = -1;
-
-		// check if we have stored the native srid in the descriptor (we should)
-		if (descriptor.getUserData().get(CassandraDataStore.CASSANDRA_NATIVE_SRID) != null)
-			srid = (Integer) descriptor.getUserData().get(CassandraDataStore.CASSANDRA_NATIVE_SRID);
-		return srid;
-	}
 }

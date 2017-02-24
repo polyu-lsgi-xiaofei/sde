@@ -119,13 +119,11 @@ public class CassandraDataStoreFactory implements DataStoreFactorySpi {
 
 	@Override
 	public DataStore createDataStore(Map<String, Serializable> params) throws IOException {
-		// TODO Auto-generated method stub
 		return new CassandraDataStore();
 	}
 
 	@Override
 	public DataStore createNewDataStore(Map<String, Serializable> params) throws IOException {
-		// TODO Auto-generated method stub
 		return new CassandraDataStore();
 	}
 }

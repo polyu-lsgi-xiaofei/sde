@@ -54,7 +54,7 @@ public class CassandraFeatureReader implements FeatureReader<SimpleFeatureType, 
 	public CassandraFeatureReader(Session session, SimpleFeatureType sft, Query query) {
 		this.sft = sft;
 		this.query = query;
-		this.session = session;
+		this.session = CassandraConnector.getSession();
 		featureCache = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.MINUTES).maximumSize(5000000L)
 				.build(new CacheLoader<String, SimpleFeature>() {
 					@Override
@@ -72,6 +72,7 @@ public class CassandraFeatureReader implements FeatureReader<SimpleFeatureType, 
 
 	public void fetch() throws Exception {
 		bbox = new ReferencedEnvelope();
+		
 		if (query.getFilter() != null) {
 			bbox = (Envelope) query.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR, bbox);
 			if (bbox == null) {

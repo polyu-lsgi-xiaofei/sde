@@ -38,7 +38,7 @@ public class CassandraIngest {
 	private Cluster cluster = null;
 
 	public CassandraIngest() {
-		cluster = Cluster.builder().addContactPoint("192.168.210.110").build();
+		cluster = Cluster.builder().addContactPoint("localhost").build();
 		// cluster =
 		// Cluster.builder().addContactPoint("192.168.200.248").build();
 	}
@@ -46,7 +46,7 @@ public class CassandraIngest {
 	public void ingest() throws Exception {
 		ShapefileDataStoreFactory datasoreFactory = new ShapefileDataStoreFactory();
 		ShapefileDataStore sds = (ShapefileDataStore) datasoreFactory.createDataStore(
-				new File("E:\\Data\\OSM\\USA\\california\\california-170101-free.shp\\gis.osm_roads_free_1.shp")
+				new File("D:\\Data\\OSM\\california\\california-170101-free.shp\\gis.osm_pois_free_1.shp")
 						.toURI().toURL());
 		sds.setCharset(Charset.forName("GBK"));
 		SimpleFeatureSource featureSource = sds.getFeatureSource();
@@ -55,7 +55,6 @@ public class CassandraIngest {
 		session.execute("use usa;");
 		CassandraDataStore datastore = new CassandraDataStore();
 		datastore.setNamespaceURI("usa");
-		
 		String table_name = featureType.getName().toString().replace(".", "_");
 		SimpleFeatureCollection featureCollection = featureSource.getFeatures();
 		FeatureIterator<SimpleFeature> features = featureCollection.features();

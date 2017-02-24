@@ -26,14 +26,13 @@ public class CassandraFeatureSource extends ContentFeatureSource {
 	 * @param query
 	 *            The defining query.
 	 */
-	public CassandraFeatureSource(Session session, ContentEntry entry) {
-		this(session, entry, Query.ALL);
+	public CassandraFeatureSource(ContentEntry entry) {
+		this(entry, Query.ALL);
 
 	}
 
-	public CassandraFeatureSource(Session session, ContentEntry entry, Query query) {
+	public CassandraFeatureSource(ContentEntry entry, Query query) {
 		super(entry, query);
-		this.session = session;
 	}
 
 	/**
@@ -46,7 +45,6 @@ public class CassandraFeatureSource extends ContentFeatureSource {
 
 	@Override
 	protected ReferencedEnvelope getBoundsInternal(Query query) throws IOException {
-
 		return null;
 	}
 

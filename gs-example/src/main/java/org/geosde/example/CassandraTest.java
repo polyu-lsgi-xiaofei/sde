@@ -4,9 +4,12 @@ import java.io.File;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 
 import org.geosde.cassandra.CassandraDataStore;
@@ -20,11 +23,20 @@ import org.geotools.data.Query;
 import org.geotools.data.simple.SimpleFeatureCollection;
 import org.geotools.data.simple.SimpleFeatureIterator;
 import org.geotools.data.simple.SimpleFeatureSource;
+import org.geotools.factory.CommonFactoryFinder;
+import org.geotools.factory.GeoTools;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.filter.Filters;
 import org.geotools.filter.text.cql2.CQL;
+import org.geotools.filter.visitor.ExtractBoundsFilterVisitor;
+import org.geotools.filter.visitor.SimplifyingFilterVisitor;
+import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.filter.Filter;
+import org.opengis.filter.FilterFactory2;
+import org.opengis.filter.expression.PropertyName;
+import org.opengis.filter.sort.SortBy;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
@@ -59,7 +71,6 @@ public class CassandraTest {
 		for (String type : types) {
 			SimpleFeatureSource featureSource = datastore.getFeatureSource(type);
 			System.out.println(featureSource.getSchema());
-			System.out.println(featureSource.getDataStore());
 		}
 
 	}
@@ -77,6 +88,7 @@ public class CassandraTest {
 		CassandraFeatureSource featureSource = (CassandraFeatureSource) datastore
 				.getFeatureSource("gis.osm_pois_free_1");
 		Query query = new Query(featureSource.getSchema().getTypeName(), filter, new String[] {});
+
 		// featureSource.getReader(query);
 
 		SimpleFeatureCollection features = featureSource.getFeatures(query);
@@ -86,15 +98,54 @@ public class CassandraTest {
 				SimpleFeature feature = iterator.next();
 				System.out.println(feature.getDefaultGeometry());
 				Geometry geometry = (Geometry) feature.getDefaultGeometry();
-				//System.out.println(feature.getID() + " default geometry " + geometry);
+				// System.out.println(feature.getID() + " default geometry " +
+				// geometry);
 			}
 		} catch (Throwable t) {
 			iterator.close();
 		}
 
-		
 	}
 
+	public void testQuery() {
+		try {
+			List<Filter> match = new ArrayList<Filter>();
+			FilterFactory2 ff = CommonFactoryFinder.getFilterFactory2(GeoTools.getDefaultHints());
+			//Filter filter1 = CQL.toFilter("BBOX(the_geom,-125.04,32.90,-113.34,42.36)");
+			Filter filter1 =ff.equal(ff.property("TIMESTAMP1"), ff.literal(10));
+			match.add(filter1);
+			Filter filter2 = ff.equal(ff.property("TIMESTAMP2"), ff.literal(11));
+			match.add(filter2);
+			Filter filter = ff.and(match);// 属性空间联合查询
+			String typeName = "TEST_PG";
+			Query query = new Query(typeName, filter);
+			System.out.println(query.getFilter());
+			Envelope bbox = new ReferencedEnvelope();
+			if (query.getFilter() != null) {
+				//bbox = (Envelope) query.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR, bbox);
+				if (bbox == null) {
+					bbox = new ReferencedEnvelope();
+				}
+			}
+			
+			System.out.println(Filters.findPropertyName(Filters.children(filter).get(0)));
+			System.out.println(CQL.toCQL(filter));
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+	}
+	  private Set<String> getSortPropertyNames(SortBy[] sortBy) {
+	        Set<String> result = new HashSet<>();
+	        for (SortBy sort : sortBy) {
+	            PropertyName p = sort.getPropertyName();
+	            if (p != null && p.getPropertyName() != null) {
+	                result.add(p.getPropertyName());
+	            }
+	        }
+
+	        return result;
+	    }
 	class QueryProcess implements Callable<Integer> {
 
 		LoadingCache<String, SimpleFeature> queue;
@@ -180,30 +231,29 @@ public class CassandraTest {
 		}
 	}
 
-	
 	public void testWriter() throws Exception {
-		
-	
+
 		ShapefileDataStoreFactory datasoreFactory = new ShapefileDataStoreFactory();
 		ShapefileDataStore sds = (ShapefileDataStore) datasoreFactory.createDataStore(
-				new File("E:\\Data\\OSM\\USA\\california\\california-170101-free.shp\\gis.osm_landuse_a_free_1.shp")
-						.toURI().toURL());
+				new File("D:\\Data\\OSM\\california\\california-170201-free.shp\\gis.osm_pois_free_1.shp").toURI()
+						.toURL());
 		sds.setCharset(Charset.forName("GBK"));
 		SimpleFeatureSource featureSource = sds.getFeatureSource();
 		SimpleFeatureType featureType = featureSource.getFeatures().getSchema();
-		//datastore.createSchema(featureType);
+		// datastore.createSchema(featureType);
 		SimpleFeatureCollection featureCollection = featureSource.getFeatures();
-		
 		CassandraDataStore datastore = new CassandraDataStore();
 		datastore.setCatalog_name("usa");
 		datastore.setNamespaceURI("usa");
-		CassandraFeatureStore cfeatureSource = (CassandraFeatureStore) datastore.getFeatureSource("gis.osm_pois_free_1");
-		System.out.println(cfeatureSource);
+		CassandraFeatureStore cfeatureSource = (CassandraFeatureStore) datastore
+				.getFeatureSource("gis_osm_pois_free_1");
 		cfeatureSource.addFeatures(featureCollection);
+		System.out.println("Finished!");
 	}
+
 	public static void main(String[] args) throws Exception {
 		// System.out.println("558".compareTo("546"));
-		new CassandraTest().testWriter();
+		new CassandraTest().testQuery();
 	}
 
 }

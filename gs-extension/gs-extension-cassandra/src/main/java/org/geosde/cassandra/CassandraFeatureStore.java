@@ -1,6 +1,8 @@
 package org.geosde.cassandra;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Set;
 
 import org.geosde.core.data.ContentEntry;
@@ -14,7 +16,6 @@ import org.geotools.data.ResourceInfo;
 import org.geotools.data.Transaction;
 import org.geotools.factory.Hints.Key;
 import org.geotools.geometry.jts.ReferencedEnvelope;
-import org.opengis.feature.FeatureVisitor;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
 import org.opengis.feature.type.Name;
@@ -24,18 +25,28 @@ import com.datastax.driver.core.Session;
 public class CassandraFeatureStore extends ContentFeatureStore {
 
 	CassandraFeatureSource delegate;
-
-	public CassandraFeatureStore(ContentEntry entry, Session session) {
+	Date date;
+	Session session=null;
+	public CassandraFeatureStore(ContentEntry entry) {
 		super(entry, Query.ALL);
-		this.delegate = new CassandraFeatureSource(session, entry);
+		this.delegate = new CassandraFeatureSource(entry);
 		this.hints = (Set<Key>) (Set<?>) delegate.getSupportedHints();
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHH");
+		try {
+			date = formatter.parse("2017020100");
+		} catch (Exception e) {
+			// TODO: handle exception
+		}
 	}
 
 	@Override
 	protected FeatureWriter<SimpleFeatureType, SimpleFeature> getWriterInternal(Query query, int flags)
 			throws IOException {
 		// TODO Auto-generated method stub
-		return new CassandraInsertFeatureWriter(delegate.getSchema());
+		session=CassandraConnector.getSession();
+		session.execute("use usa;");
+		return new CassandraInsertFeatureWriter(delegate.getSchema(), date,delegate.getName().getLocalPart(), session);
+		//return new CassandraInsertFeatureWriter(delegate.getSchema());
 	}
 
 	// ----------------------------------------------------------------------------------------
