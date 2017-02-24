@@ -11,9 +11,17 @@
 	<description>Compute Engine</description>
 	<dependencies>
 		<dependency>
+			<groupId>org.geosde</groupId>
+			<artifactId>gs-core</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>hsqldb</groupId>
 			<artifactId>hsqldb</artifactId>
 			<version>1.8.0.10</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jaitools</groupId>
+			<artifactId>jt-utils</artifactId>
 		</dependency>
 	</dependencies>
 </project>

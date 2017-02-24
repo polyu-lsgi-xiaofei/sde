@@ -112,6 +112,29 @@
 				<version>${gt.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>javax.media</groupId>
+				<artifactId>jai_imageio</artifactId>
+				<version>1.1</version>
+			</dependency>
+
+			<!-- JAITools -->
+			<dependency>
+				<groupId>org.jaitools</groupId>
+				<artifactId>jt-utils</artifactId>
+				<version>${jt.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jaitools</groupId>
+				<artifactId>jt-vectorbinarize</artifactId>
+				<version>${jt.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jaitools</groupId>
+				<artifactId>jt-zonalstats</artifactId>
+				<version>${jt.version}</version>
+			</dependency>
+
+			<dependency>
 				<groupId>com.google.guava</groupId>
 				<artifactId>guava</artifactId>
 				<version>19.0</version>
@@ -179,6 +202,7 @@
 		<geosde.version>1.0-SNAPSHOT</geosde.version>
 		<gt.version>17-SNAPSHOT</gt.version>
 		<postgresql.jdbc.version>9.4.1211</postgresql.jdbc.version>
+		<jt.version>1.4.0</jt.version>
 	</properties>
 
 
