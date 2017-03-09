@@ -1,12 +1,8 @@
 package org.geosde.core.index;
-
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.Lists;
@@ -35,16 +31,13 @@ public class S2IndexStrategy implements IndexStrategy {
 	@Override
 	public PrimaryKey getPrimaryKey() {
 		List<PrimaryKeyColumn> columns = new ArrayList<>();
-		columns.add(new PrimaryKeyColumn("cell_id", true, String.class));
-		columns.add(new PrimaryKeyColumn("epoch", true, String.class));
-		columns.add(new PrimaryKeyColumn("pos", false, Long.class));
-		columns.add(new PrimaryKeyColumn("timestamp", false, Long.class));
-		columns.add(new PrimaryKeyColumn("fid", false, UUID.class));
+		columns.add(new PrimaryKeyColumn("cell", true, String.class));
+		columns.add(new PrimaryKeyColumn("pos", false, String.class));
 		return new PrimaryKey(tableName, columns);
 	}
 
 	@Override
-	public Map<String, Object> index(Geometry geom, long timestamp) {
+	public Map<String, Object> index(Geometry geom) {
 		Map<String, Object> index = new HashMap<>();
 		S2CellId id = null;
 		if (geom instanceof Point) {
@@ -65,23 +58,17 @@ public class S2IndexStrategy implements IndexStrategy {
 			coverer.getCovering(a, covering);
 			id = covering.get(0);
 		}
-
-		Date date = new Date(timestamp);
-		String year_month = new SimpleDateFormat("yyyyMM").format(date);
-		index.put("epoch", year_month);
 		if (id.level() <= QUAD_LEVEL) {
-			index.put("cell_id", id.toToken());
+			index.put("cell", id.toToken());
 		} else {
-			index.put("cell_id", id.parent(QUAD_LEVEL).toToken());
+			index.put("cell", id.parent(QUAD_LEVEL).toToken());
 		}
-		index.put("pos", id.pos());
-		index.put("timestamp", date.getTime());
-		index.put("fid", UUID.randomUUID());
+		index.put("pos", id.toToken());
 		return index;
 	}
 
 	@Override
-	public Map<String, Object> index(double x, double y, long timestamp) {
+	public Map<String, Object> index(double x, double y) {
 		// TODO Auto-generated method stub
 		return null;
 	}

@@ -15,31 +15,12 @@
 	<classpathentry kind="src" path="/gs-core"/>
 	<classpathentry kind="src" path="/gs-s2"/>
 	<classpathentry kind="var" path="M2_REPO/com/google/guava/guava/19.0/guava-19.0.jar" sourcepath="M2_REPO/com/google/guava/guava/19.0/guava-19.0-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/datastax/cassandra/cassandra-driver-core/3.1.4/cassandra-driver-core-3.1.4.jar"/>
-	<classpathentry kind="var" path="M2_REPO/io/netty/netty-handler/4.0.37.Final/netty-handler-4.0.37.Final.jar"/>
-	<classpathentry kind="var" path="M2_REPO/io/netty/netty-buffer/4.0.37.Final/netty-buffer-4.0.37.Final.jar"/>
-	<classpathentry kind="var" path="M2_REPO/io/netty/netty-common/4.0.37.Final/netty-common-4.0.37.Final.jar" sourcepath="M2_REPO/io/netty/netty-common/4.0.37.Final/netty-common-4.0.37.Final-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/io/netty/netty-transport/4.0.37.Final/netty-transport-4.0.37.Final.jar" sourcepath="M2_REPO/io/netty/netty-transport/4.0.37.Final/netty-transport-4.0.37.Final-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/io/netty/netty-codec/4.0.37.Final/netty-codec-4.0.37.Final.jar" sourcepath="M2_REPO/io/netty/netty-codec/4.0.37.Final/netty-codec-4.0.37.Final-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/io/dropwizard/metrics/metrics-core/3.1.2/metrics-core-3.1.2.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/github/jnr/jnr-ffi/2.0.7/jnr-ffi-2.0.7.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/github/jnr/jffi/1.2.10/jffi-1.2.10.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/github/jnr/jffi/1.2.10/jffi-1.2.10-native.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/ow2/asm/asm/5.0.3/asm-5.0.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/ow2/asm/asm-commons/5.0.3/asm-commons-5.0.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/ow2/asm/asm-tree/5.0.3/asm-tree-5.0.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/ow2/asm/asm-analysis/5.0.3/asm-analysis-5.0.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/ow2/asm/asm-util/5.0.3/asm-util-5.0.3.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/github/jnr/jnr-x86asm/1.0.2/jnr-x86asm-1.0.2.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/github/jnr/jnr-posix/3.0.27/jnr-posix-3.0.27.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/github/jnr/jnr-constants/0.9.0/jnr-constants-0.9.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/geotools/gt-api/17-SNAPSHOT/gt-api-17-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-api/17-SNAPSHOT/gt-api-17-SNAPSHOT-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/vividsolutions/jts/1.13/jts-1.13.jar" sourcepath="M2_REPO/com/vividsolutions/jts/1.13/jts-1.13-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/geotools/gt-referencing/17-SNAPSHOT/gt-referencing-17-SNAPSHOT.jar"/>
 	<classpathentry kind="var" path="M2_REPO/com/googlecode/efficient-java-matrix-library/core/0.26/core-0.26.jar" sourcepath="M2_REPO/com/googlecode/efficient-java-matrix-library/core/0.26/core-0.26-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/commons-pool/commons-pool/1.5.4/commons-pool-1.5.4.jar" sourcepath="M2_REPO/commons-pool/commons-pool/1.5.4/commons-pool-1.5.4-sources.jar"/>
-	<classpathentry kind="var" path="M2_REPO/org/geotools/gt-metadata/17-SNAPSHOT/gt-metadata-17-SNAPSHOT.jar" sourcepath="M2_REPO/org/geotools/gt-metadata/17-SNAPSHOT/gt-metadata-17-SNAPSHOT-sources.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/geotools/gt-metadata/17-SNAPSHOT/gt-metadata-17-SNAPSHOT.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/geotools/gt-opengis/17-SNAPSHOT/gt-opengis-17-SNAPSHOT.jar"/>
 	<classpathentry kind="var" path="M2_REPO/net/java/dev/jsr-275/jsr-275/1.0-beta-2/jsr-275-1.0-beta-2.jar" sourcepath="M2_REPO/net/java/dev/jsr-275/jsr-275/1.0-beta-2/jsr-275-1.0-beta-2-sources.jar"/>
 	<classpathentry kind="var" path="M2_REPO/jgridshift/jgridshift/1.0/jgridshift-1.0.jar"/>

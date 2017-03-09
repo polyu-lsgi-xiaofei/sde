@@ -42,7 +42,7 @@ public class PostGISTest {
 		params.put(PostgisNGDataStoreFactory.PORT.key, 5432);
 		params.put(PostgisNGDataStoreFactory.HOST.key, "localhost");
 		params.put(PostgisNGDataStoreFactory.SCHEMA.key, "public");
-		params.put(PostgisNGDataStoreFactory.DATABASE.key, "japan");
+		params.put(PostgisNGDataStoreFactory.DATABASE.key, "california");
 		params.put(PostgisNGDataStoreFactory.LOOSEBBOX.key, true);
 		params.put(PostgisNGDataStoreFactory.USER.key, "postgres");
 		params.put(PostgisNGDataStoreFactory.PASSWD.key, "869222");
@@ -51,7 +51,7 @@ public class PostGISTest {
 		try {
 			final JDBCDataStore datastore = spi.createDataStore(params);
 			System.out.println(datastore);
-			JDBCFeatureStore featureSource =(JDBCFeatureStore)datastore.getFeatureSource("gis.osm_pois_free_1");
+			JDBCFeatureStore featureSource =(JDBCFeatureStore)datastore.getFeatureSource("gis_osm_pois_free_1");
 			SimpleFeatureCollection features = featureSource.getFeatures();
 			SimpleFeatureIterator iterator = features.features();
 			try {
@@ -78,7 +78,7 @@ public class PostGISTest {
 		params.put(PostgisNGDataStoreFactory.PORT.key, 5432);
 		params.put(PostgisNGDataStoreFactory.HOST.key, "localhost");
 		params.put(PostgisNGDataStoreFactory.SCHEMA.key, "public");
-		params.put(PostgisNGDataStoreFactory.DATABASE.key, "japan");
+		params.put(PostgisNGDataStoreFactory.DATABASE.key, "california");
 		params.put(PostgisNGDataStoreFactory.LOOSEBBOX.key, true);
 		params.put(PostgisNGDataStoreFactory.USER.key, "postgres");
 		params.put(PostgisNGDataStoreFactory.PASSWD.key, "869222");
@@ -89,14 +89,14 @@ public class PostGISTest {
 			System.out.println(datastore);
 			ShapefileDataStoreFactory datasoreFactory = new ShapefileDataStoreFactory();
 			ShapefileDataStore sds = (ShapefileDataStore) datasoreFactory.createDataStore(
-					new File("E:\\Data\\OSM\\USA\\california\\california-170101-free.shp\\gis.osm_landuse_a_free_1.shp")
+					new File("D:\\Data\\OSM\\california\\california-170201-free.shp\\gis.osm_pois_free_1.shp")
 							.toURI().toURL());
 			sds.setCharset(Charset.forName("GBK"));
 			SimpleFeatureSource featureSource = sds.getFeatureSource();
 			SimpleFeatureType featureType = featureSource.getFeatures().getSchema();
-			//datastore.createSchema(featureType);
+			datastore.createSchema(featureType);
 			
-			JDBCFeatureStore jdbcFeatureSource =(JDBCFeatureStore)datastore.getFeatureSource("gis.osm_landuse_a_free_1");
+			JDBCFeatureStore jdbcFeatureSource =(JDBCFeatureStore)datastore.getFeatureSource("gis.osm_pois_free_1");
 			SimpleFeatureCollection featureCollection = featureSource.getFeatures();
 			jdbcFeatureSource.addFeatures(featureCollection);
 			

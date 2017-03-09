@@ -8,6 +8,7 @@ import java.util.Set;
 import org.geosde.core.data.ContentEntry;
 import org.geosde.core.data.ContentFeatureStore;
 import org.geosde.core.data.ContentState;
+import org.geosde.core.jdbc.JDBCFeatureStore;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.FeatureWriter;
 import org.geotools.data.Query;
@@ -26,10 +27,18 @@ public class CassandraFeatureStore extends ContentFeatureStore {
 
 	CassandraFeatureSource delegate;
 	Date date;
-	Session session=null;
+	Session session = null;
+
 	public CassandraFeatureStore(ContentEntry entry) {
 		super(entry, Query.ALL);
-		this.delegate = new CassandraFeatureSource(entry);
+		this.delegate = new CassandraFeatureSource(entry) {
+			@Override
+			public void setTransaction(Transaction transaction) {
+				super.setTransaction(transaction);
+				// keep this feature store in sync
+				CassandraFeatureStore.this.setTransaction(transaction);
+			}
+		};
 		this.hints = (Set<Key>) (Set<?>) delegate.getSupportedHints();
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHH");
 		try {
@@ -43,10 +52,10 @@ public class CassandraFeatureStore extends ContentFeatureStore {
 	protected FeatureWriter<SimpleFeatureType, SimpleFeature> getWriterInternal(Query query, int flags)
 			throws IOException {
 		// TODO Auto-generated method stub
-		session=CassandraConnector.getSession();
+		session = SessionRepository.getSession();
 		session.execute("use usa;");
-		return new CassandraInsertFeatureWriter(delegate.getSchema(), date,delegate.getName().getLocalPart(), session);
-		//return new CassandraInsertFeatureWriter(delegate.getSchema());
+		return new CassandraInsertFeatureWriter(delegate.getSchema(), date, delegate.getName().getLocalPart(), session);
+		// return new CassandraInsertFeatureWriter(delegate.getSchema());
 	}
 
 	// ----------------------------------------------------------------------------------------

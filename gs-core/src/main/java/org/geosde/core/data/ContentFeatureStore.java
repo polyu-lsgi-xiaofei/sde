@@ -262,7 +262,6 @@ public abstract class ContentFeatureStore extends ContentFeatureSource
 		List<FeatureId> ids = new ArrayList<FeatureId>();
 
 		FeatureWriter<SimpleFeatureType, SimpleFeature> writer = getWriterAppend();
-		System.out.println(writer);
 		FeatureIterator<SimpleFeature> f = featureCollection.features();
 		try {
 			while (f.hasNext()) {

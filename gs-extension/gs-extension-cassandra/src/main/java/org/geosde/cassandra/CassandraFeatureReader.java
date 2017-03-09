@@ -17,10 +17,14 @@ import java.util.concurrent.TimeUnit;
 import org.geotools.data.FeatureReader;
 import org.geotools.data.Query;
 import org.geotools.feature.simple.SimpleFeatureBuilder;
+import org.geotools.filter.Filters;
+import org.geotools.filter.text.cql2.CQL;
 import org.geotools.filter.visitor.ExtractBoundsFilterVisitor;
+import org.geotools.filter.visitor.SimplifyingFilterVisitor;
 import org.geotools.geometry.jts.ReferencedEnvelope;
 import org.opengis.feature.simple.SimpleFeature;
 import org.opengis.feature.simple.SimpleFeatureType;
+import org.opengis.filter.Filter;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
@@ -47,14 +51,13 @@ public class CassandraFeatureReader implements FeatureReader<SimpleFeatureType, 
 	Envelope bbox;
 	Session session;
 	LoadingCache<String, SimpleFeature> featureCache = null;
-	String datetime = "2017010100";
 	SimpleFeature currentFeature;
 	Iterator<SimpleFeature> itr;
 
 	public CassandraFeatureReader(Session session, SimpleFeatureType sft, Query query) {
 		this.sft = sft;
 		this.query = query;
-		this.session = CassandraConnector.getSession();
+		this.session = SessionRepository.getSession();
 		featureCache = CacheBuilder.newBuilder().expireAfterWrite(5L, TimeUnit.MINUTES).maximumSize(5000000L)
 				.build(new CacheLoader<String, SimpleFeature>() {
 					@Override
@@ -72,7 +75,7 @@ public class CassandraFeatureReader implements FeatureReader<SimpleFeatureType, 
 
 	public void fetch() throws Exception {
 		bbox = new ReferencedEnvelope();
-		
+
 		if (query.getFilter() != null) {
 			bbox = (Envelope) query.getFilter().accept(ExtractBoundsFilterVisitor.BOUNDS_VISITOR, bbox);
 			if (bbox == null) {
@@ -110,19 +113,24 @@ public class CassandraFeatureReader implements FeatureReader<SimpleFeatureType, 
 
 		}
 		// System.out.println(quad_ids);
-		System.out.println(quad_ids.size());
+		String datetime = "";
+		ArrayList<Filter> list = Filters.children(query.getFilter());
+		for (Filter f : list) {
+			if (f.toString().contains("timestamp")) {
+				datetime = CQL.toCQL(f).split("=")[1].trim();
+			}
+		}
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHH");
 		Date date = formatter.parse(datetime);
 		String year_month = new SimpleDateFormat("yyyyMM").format(date);
 		SimpleFeatureBuilder builder = new SimpleFeatureBuilder(sft);
 		session.execute("use usa");
 		PreparedStatement statement = session.prepare(
-				"select cell_id,epoch,the_geom,fid,timestamp from gis_osm_pois_free_1 where cell_id = ? and epoch=?;");
-
+				"select cell,pos,fid,the_geom from gis_osm_pois_free_1_"+datetime+" where cell=?;");
 		List<QueryProcess> tasks = new ArrayList<>();
 		int index = 0;
 		for (String quad_id : quad_ids) {
-			QueryProcess process = new QueryProcess(quad_id, session, featureCache, statement.bind(quad_id, year_month),
+			QueryProcess process = new QueryProcess(quad_id, session, featureCache, statement.bind(quad_id),
 					builder, bbox);
 			tasks.add(process);
 		}
@@ -138,14 +146,13 @@ public class CassandraFeatureReader implements FeatureReader<SimpleFeatureType, 
 
 	@Override
 	public boolean hasNext() throws IOException {
-
 		return itr.hasNext();
 	}
 
 	@Override
 	public SimpleFeature next() throws IOException, IllegalArgumentException, NoSuchElementException {
 		// TODO Auto-generated method stub
-		currentFeature= itr.next();
+		currentFeature = itr.next();
 		return currentFeature;
 	}
 
@@ -185,8 +192,7 @@ public class CassandraFeatureReader implements FeatureReader<SimpleFeatureType, 
 			for (Row row : rs) {
 				// System.out.println(row);
 				buffer = row.getBytes("the_geom");
-				UUID fid = row.getUUID("fid");
-				long time = row.getLong("timestamp");
+				String fid = row.getString("fid");
 				try {
 					geometry = reader.read(buffer.array());
 					if (!bbox.intersects(geometry.getEnvelopeInternal())) {
@@ -197,8 +203,8 @@ public class CassandraFeatureReader implements FeatureReader<SimpleFeatureType, 
 				}
 
 				builder.set("the_geom", geometry);
-				SimpleFeature feature = builder.buildFeature(fid.toString());
-				featureCache.put(fid.toString(), feature);
+				SimpleFeature feature = builder.buildFeature(fid);
+				featureCache.put(fid, feature);
 			}
 
 			return 0;

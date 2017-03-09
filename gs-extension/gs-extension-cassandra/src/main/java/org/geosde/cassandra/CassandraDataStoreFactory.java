@@ -33,16 +33,14 @@ import org.geotools.util.SimpleInternationalString;
 public class CassandraDataStoreFactory implements DataStoreFactorySpi {
 
 	/** parameter for database type */
-	public static final Param DBTYPE = new Param("dbtype", String.class, "Type", true, "postgis");
+	public static final Param DBTYPE = new Param("dbtype", String.class, "Type", true, "cassandra");
 
 	/** parameter for database host */
 	public static final Param HOST = new Param("host", String.class, "Host", true, "localhost");
 
 	/** parameter for database instance */
-	public static final Param INSTANCE = new Param("instance", String.class, "Instance", true);
-
-	/** parameter for database instance */
-	public static final Param TABLE = new Param("table", String.class, "Table", true);
+	public static final Param KEYSPACE = new Param("keyspace", String.class, "Instance", true);
+	
 
 	/** parameter for database user */
 	public static final Param USER = new Param("user", String.class, "user name to login as");
@@ -91,6 +89,7 @@ public class CassandraDataStoreFactory implements DataStoreFactorySpi {
 		return checkDBType(params);
 	}
 
+	
 	protected boolean checkDBType(Map params) {
 		return true;
 	}
@@ -105,9 +104,9 @@ public class CassandraDataStoreFactory implements DataStoreFactorySpi {
 		// remember: when adding a new parameter here that is not connection
 		// related,
 		// add it to the JDBCJNDIDataStoreFactory class
-		parameters.put(DBTYPE.key,
-				new Param(DBTYPE.key, DBTYPE.type, DBTYPE.description, DBTYPE.required, getDatabaseID()));
+		parameters.put(DBTYPE.key,DBTYPE);
 		parameters.put(HOST.key, HOST);
+		parameters.put(KEYSPACE.key, KEYSPACE);
 		parameters.put(USER.key, USER);
 		parameters.put(PASSWD.key, PASSWD);
 
@@ -119,7 +118,9 @@ public class CassandraDataStoreFactory implements DataStoreFactorySpi {
 
 	@Override
 	public DataStore createDataStore(Map<String, Serializable> params) throws IOException {
-		return new CassandraDataStore();
+		CassandraDataStore datastore=new CassandraDataStore();
+		datastore.setNamespaceURI(params.get(KEYSPACE.key).toString());
+		return datastore;
 	}
 
 	@Override

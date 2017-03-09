@@ -3,6 +3,7 @@ package org.geosde.cassandra;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -67,8 +68,7 @@ public class CassandraInsertFeatureWriter implements FeatureWriter<SimpleFeature
 	public SimpleFeature next() throws IOException {
 		// reader has no more (no were are adding to the file)
 		// so return an empty feature
-		String featureID = UUID.randomUUID().toString();
-		currentFeature = DataUtilities.template(getFeatureType(), featureID, emptyAtts);
+		currentFeature = DataUtilities.template(getFeatureType(), null, emptyAtts);
 		featurelist.add(currentFeature);
 		return currentFeature;
 
@@ -94,54 +94,52 @@ public class CassandraInsertFeatureWriter implements FeatureWriter<SimpleFeature
 		try {
 			Geometry geom;
 
-			for (SimpleFeature cur : featurelist) {
+			for (SimpleFeature feature : featurelist) {
 				// the datastore sets as userData, grab it and update the fid
 				if (sft.getGeometryDescriptor().getType().getName().toString().equals("MultiPolygon")) {
-					geom = (MultiPolygon) cur.getDefaultGeometry();
+					geom = (MultiPolygon) feature.getDefaultGeometry();
 				} else if (sft.getGeometryDescriptor().getType().getName().toString().equals("MultiLineString")) {
-					geom = (MultiLineString) cur.getDefaultGeometry();
+					geom = (MultiLineString) feature.getDefaultGeometry();
 				} else {
-					geom = (Point) cur.getDefaultGeometry();
+					geom = (Point) feature.getDefaultGeometry();
 				}
-
 				ByteBuffer buf_geom = ByteBuffer.wrap(writer.write(geom));
-				Map<String, Object> primaryKey = indexStrategy.index(geom, date.getTime());
+				Map<String, Object> primaryKey = indexStrategy.index(geom);
 				List<AttributeDescriptor> attrDes = sft.getAttributeDescriptors();
 				List<String> col_items = new ArrayList<>();
-				List<Object> values = new ArrayList<>();
-
-				values.add(primaryKey.get("cell_id"));
-				values.add(primaryKey.get("epoch"));
-				values.add(primaryKey.get("pos"));
-				values.add(primaryKey.get("timestamp"));
-				values.add(primaryKey.get("fid"));
-
+				Map<String, Object> values = new HashMap<>();
+				values.put("cell", primaryKey.get("cell"));
+				values.put("pos", primaryKey.get("pos"));
+				Object fid = null;
 				for (AttributeDescriptor attr : attrDes) {
+					if(attr.getLocalName().equals("cell")||attr.getLocalName().equals("pos"))
+						continue;
 					if (attr instanceof GeometryDescriptor) {
 						String col_name = attr.getLocalName();
-						Class type = attr.getType().getBinding();
 						col_items.add(col_name);
-						values.add(buf_geom);
+						values.put(col_name, buf_geom);
 					} else {
 						String col_name = attr.getLocalName();
 						Class type = attr.getType().getBinding();
 						col_items.add(col_name);
-						values.add(cur.getAttribute(col_name));
+						values.put(col_name, feature.getAttribute(col_name));
+						if (col_name.equals("osm_id"))
+							values.put("fid", feature.getAttribute(col_name));
 					}
 
 				}
-				String cols = "";
+		
 				String params = "";
-				for (int i = 0; i < col_items.size() - 1; i++) {
-					cols += col_items.get(i) + ",";
+				StringBuilder builder = new StringBuilder();
+				List<Object> list = new ArrayList<>();
+				for (String name : values.keySet()) {
+					builder.append(name + ",");
+					list.add(values.get(name));
 					params += "?,";
 				}
-				cols += col_items.get(col_items.size() - 1);
-				params += "?";
-				SimpleStatement s = new SimpleStatement("INSERT INTO " + table_name
-						+ " (cell_id, epoch, pos,timestamp,fid, " + cols + ") values (?,?,?,?,?," + params + ");",
-						values.toArray());
-				//System.out.println(s);
+				String items = builder.toString().substring(0, builder.toString().length() - 1);
+				SimpleStatement s = new SimpleStatement("INSERT INTO " + table_name + " (" + items + ") values ("
+						+ params.substring(0, params.length() - 1) + ");", list.toArray());
 				bs.add(s);
 			}
 			session.execute(bs);
@@ -151,7 +149,7 @@ public class CassandraInsertFeatureWriter implements FeatureWriter<SimpleFeature
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 	}
 
 	@Override

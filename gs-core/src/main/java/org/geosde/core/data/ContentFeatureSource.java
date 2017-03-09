@@ -347,7 +347,6 @@ public abstract class ContentFeatureSource implements SimpleFeatureSource {
         //load the type from the state shared among feature sources
         ContentState state = entry.getState(transaction);
         SimpleFeatureType featureType = state.getFeatureType();
-
         if (featureType == null) {
             //build and cache it
             synchronized (state) {
@@ -657,11 +656,11 @@ public abstract class ContentFeatureSource implements SimpleFeatureSource {
         }
         
         //filtering
-        if ( !canFilter() ) {
-            if (query.getFilter() != null && query.getFilter() != Filter.INCLUDE ) {
-                reader = new FilteringFeatureReader<SimpleFeatureType, SimpleFeature>( reader, query.getFilter() );
-            }    
-        }
+        // if ( !canFilter() ) {
+        //    if (query.getFilter() != null && query.getFilter() != Filter.INCLUDE ) {
+        //        reader = new FilteringFeatureReader<SimpleFeatureType, SimpleFeature>( reader, query.getFilter() );
+        //    }    
+        //}
         
         // sorting
         if (query.getSortBy() != null && query.getSortBy().length != 0) {

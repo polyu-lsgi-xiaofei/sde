@@ -1,11 +1,14 @@
 package org.geosde.cassandra;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
-import org.geosde.core.TransactionMode;
+import org.geosde.cassandra.object.CassandraObjectMapper;
+import org.geosde.cassandra.object.Layer;
 import org.geosde.core.data.ContentDataStore;
 import org.geosde.core.data.ContentEntry;
 import org.geosde.core.data.ContentFeatureSource;
@@ -32,26 +35,14 @@ import com.vividsolutions.jts.geom.Geometry;
 
 public class CassandraDataStore extends ContentDataStore {
 
-	private String catalog_name;
-	private TransactionMode mode;
+	/**
+	 * Boolean marker stating whether the feature type is to be considered read
+	 * only
+	 */
+	public static final String CASSANDRA_READ_ONLY = "cassandra.readOnly";
+	public SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHH");
 
 	public CassandraDataStore() {
-		this(TransactionMode.READ);
-	}
-
-	public CassandraDataStore(TransactionMode mode) {
-		this.mode = mode;
-	}
-
-	//
-	// Property accessors
-	//
-	public String getCatalog_name() {
-		return catalog_name;
-	}
-
-	public void setCatalog_name(String catalog_name) {
-		this.catalog_name = catalog_name;
 	}
 
 	//
@@ -64,11 +55,12 @@ public class CassandraDataStore extends ContentDataStore {
 			// if the schema still haven't been computed, force its computation
 			// so that we can decide if the feature type is read only
 			schema = getSchema(entry.getName());
-			System.out.println(schema);
 			entry.getState(Transaction.AUTO_COMMIT).setFeatureType(schema);
 		}
 		schema = entry.getState(Transaction.AUTO_COMMIT).getFeatureType();
-		if (mode == TransactionMode.READ) {
+
+		Object readOnlyMarker = schema.getUserData().get(CASSANDRA_READ_ONLY);
+		if (Boolean.TRUE.equals(readOnlyMarker)) {
 			return new CassandraFeatureSource(entry, Query.ALL);
 		} else {
 			return new CassandraFeatureStore(entry);
@@ -78,28 +70,28 @@ public class CassandraDataStore extends ContentDataStore {
 
 	@Override
 	protected List<Name> createTypeNames() throws IOException {
-		Session session = CassandraConnector.getSession();
+		Session session = SessionRepository.getSession();
 		List<Name> typeNames = new ArrayList<>();
 		String namespace = getNamespaceURI();
 		SimpleStatement statement = new SimpleStatement(
-				"SELECT catalog_name,workspace_name,layer_name,cdate FROM catalog.layers;");
+				"SELECT workspace,category,layer_name,cdate FROM catalog.layer;");
 		ResultSet rs = session.execute(statement);
-
 		for (Row row : rs) {
-			String workspace_name = row.getString("workspace_name");
+			String workspace_name = row.getString("workspace");
 			String layer_name = row.getString("layer_name");
+			long cdate = row.getLong("cdate");
+
 			if (namespace.equals(workspace_name))
-				typeNames.add(new NameImpl(workspace_name, layer_name));
+				typeNames.add(new NameImpl(workspace_name, layer_name + "_" + formatter.format(new Date(cdate))));
 		}
 		session.close();
 		return typeNames;
 	}
 
 	public void createSchema(SimpleFeatureType featureType, Date date) throws IOException {
-		Session session = CassandraConnector.getSession();
-		String catalog_name = "usa";
+
 		String workspace_name = getNamespaceURI();
-		String layer_name = featureType.getTypeName();
+		String layer_name = featureType.getTypeName().replace(".", "_");
 		Date cdate = date;
 		String owner = "xiaofei";
 		String geometry_type = featureType.getGeometryDescriptor().getType().getName().getLocalPart();
@@ -109,32 +101,53 @@ public class CassandraDataStore extends ContentDataStore {
 		double miny = 0;
 		double maxx = 0;
 		double maxy = 0;
-		String keywords = "";
+		String keywords = featureType.getGeometryDescriptor().getType().getName().getLocalPart();
 
-		SimpleStatement statement = new SimpleStatement(
-				"INSERT INTO catalog.layers (catalog_name,workspace_name,layer_name,cdate,owner,geometry_type,geometry_column,srid,minx,miny,maxx,maxy,keywords) "
-						+ "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?);",
-				catalog_name, workspace_name, layer_name.toString().replace(".", "_"), cdate.getTime(), owner,
-				geometry_type, geometry_column, srid, minx, miny, maxx, maxy, keywords);
-		session.execute(statement);
+		Layer layer = new Layer();
+		layer.setWorkspace(workspace_name);
+		layer.setCategory("basic");
+		layer.setLayer_name(layer_name);
+		layer.setCdate(cdate.getTime());
+		layer.setGeometry_column(geometry_column);
+		layer.setGeometry_type(geometry_type);
+		layer.setSrid(srid);
+		layer.setMaxx(maxx);
+		layer.setMaxy(maxy);
+		layer.setMinx(minx);
+		layer.setMiny(miny);
+		layer.setOwner(owner);
+		layer.setKeywords(keywords);
+		CassandraObjectMapper.addLayer(layer);
 
+		Session session = SessionRepository.getSession();
 		StringBuilder builder = new StringBuilder();
+
 		builder.append("CREATE TABLE IF NOT EXISTS " + workspace_name + "."
-				+ featureType.getName().toString().replace(".", "_") + " (");
-		builder.append("cell_id text,");
-		builder.append("epoch text,");
-		builder.append("pos bigint,");
-		builder.append("timestamp bigint,");
-		builder.append("fid uuid,");
+				+ featureType.getName().toString().replace(".", "_") + "_" + formatter.format(cdate) + " (");
+		builder.append("cell text,");
+		builder.append("pos text,");
+		builder.append("fid text,");
 		List<AttributeDescriptor> attrDes = featureType.getAttributeDescriptors();
 		List<String> col_items = new ArrayList<>();
+		String cols="";
 		for (AttributeDescriptor attr : attrDes) {
 			String col_name = attr.getLocalName();
+			cols+=col_name+",";
 			Class type = attr.getType().getBinding();
 			builder.append(col_name + " " + CassandraTypeConvertor.TYPE_TO_CA_MAP.get(type).getName().toString() + ",");
 		}
-		builder.append("PRIMARY KEY ((cell_id,epoch),pos,timestamp,fid)");
+		builder.append("PRIMARY KEY (cell,pos,fid)");
 		builder.append(");");
+		System.out.println(builder.toString());
+		session.execute(builder.toString());
+		
+		builder = new StringBuilder();
+		builder.append("CREATE MATERIALIZED VIEW IF NOT EXISTS "+workspace_name+"."+featureType.getName().toString().replace(".", "_") + "_" + formatter.format(cdate)+"_view AS ");
+		builder.append("SELECT cell, pos, fid,"+cols.substring(0,cols.length()-1));
+		builder.append(" FROM "+workspace_name+"."+featureType.getName().toString().replace(".", "_") + "_" + formatter.format(cdate));
+		builder.append(" WHERE fid IS NOT NULL AND cell IS NOT NULL AND pos IS NOT NULL");
+		builder.append(" PRIMARY KEY ( fid, cell, pos );");
+		System.out.println(builder.toString());
 		session.execute(builder.toString());
 		session.close();
 	}
@@ -146,21 +159,13 @@ public class CassandraDataStore extends ContentDataStore {
 
 	@Override
 	public SimpleFeatureType getSchema(Name name) throws IOException {
-		String catalog_name = getCatalog_name();
+		Session session = SessionRepository.getSession();
 		String workspace_name = getNamespaceURI();
-		KeyspaceMetadata keyspaceMetadata = CassandraConnector.getCluster().getMetadata().getKeyspace(workspace_name);
-		TableMetadata table = keyspaceMetadata.getTable(name.getLocalPart().replace(".", "_"));
-		return getSchema(catalog_name, workspace_name, name, table);
-	}
-
-	public SimpleFeatureType getSchema(String catalog_name, String workspace_name, Name name, TableMetadata table) {
-		Session session = CassandraConnector.getSession();
-		SimpleStatement statement = new SimpleStatement(
-				"SELECT * FROM catalog.layers where catalog_name=? and workspace_name=? and layer_name=?;",
-				catalog_name, workspace_name, name.getLocalPart());
-		ResultSet rs = session.execute(statement);
-		Row row = rs.one();
-		int srid = row.getInt("srid");
+		String category = "basic";
+		String layername = name.getLocalPart();
+		KeyspaceMetadata keyspaceMetadata = SessionRepository.getMetadata().getKeyspace(workspace_name);
+		TableMetadata table = keyspaceMetadata.getTable(layername);
+		session.close();
 		List<ColumnMetadata> columns = table.getColumns();
 		SimpleFeatureTypeBuilder builder = new SimpleFeatureTypeBuilder();
 		builder.setName(name);
@@ -185,8 +190,8 @@ public class CassandraDataStore extends ContentDataStore {
 				}
 			}
 		}
-		session.close();
 		return builder.buildFeatureType();
+
 	}
 
 	//

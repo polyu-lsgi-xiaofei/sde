@@ -11,7 +11,6 @@
 	<description>Cassandra SDE</description>
 
 	<dependencies>
-
 		<dependency>
 			<groupId>org.geosde</groupId>
 			<artifactId>gs-core</artifactId>
@@ -23,6 +22,18 @@
 		<dependency>
 			<groupId>org.geotools</groupId>
 			<artifactId>gt-cql</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.datastax.cassandra</groupId>
+			<artifactId>cassandra-driver-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.datastax.cassandra</groupId>
+			<artifactId>cassandra-driver-extras</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.datastax.cassandra</groupId>
+			<artifactId>cassandra-driver-mapping</artifactId>
 		</dependency>
 	</dependencies>
 </project>
